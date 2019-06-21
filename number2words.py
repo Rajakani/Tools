@@ -1,28 +1,63 @@
-def numberToText(no):
+def ignore_exception(IgnoreException=Exception,DefaultVal=None):
+    """ Decorator for ignoring exception from a function
+    e.g.   @ignore_exception(DivideByZero)
+    e.g.2. ignore_exception(DivideByZero)(Divide)(2/0)
+    """
+    def dec(function):
+        def _dec(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except IgnoreException:
+                return DefaultVal
+        return _dec
+    return dec
+
+def numberToText(num):
     ones = " ,one,two,three,four,five,six,seven,eight,nine,ten,eleven,tweleve,thirteen,fourteen,fifteen,sixteen,seventeen,eighteen,nineteen,twenty".split(',')
     tens = "ten,twenty,thirty,fourty,fifty,sixty,seventy,eighty,ninety".split(',')
     text = ""
-    if len(str(no))<=2:
-        if(no<20):
-            text = ones[no]
+    addAnd = True
+    if len(str(num))<=2:
+        if(num<20):
+            text = ones[num]
         else:
-            text = tens[no//10-1] +" " + ones[(no %10)]
-    elif len(str(no))==3:
-        text = ones[no//100] +" hundred " + numberToText(no- ((no//100)* 100))
-    elif len(str(no))<=5:
-        text = numberToText(no//1000) +" thousand " + numberToText(no- ((no//1000)* 1000))
-    elif len(str(no))<=7:
-        text = numberToText(no//100000) +" lakh " + numberToText(no- ((no//100000)* 100000))
+            text = tens[num//10-1] +" " + ones[(num %10)]
+    elif len(str(num))==3:
+        text = ones[num//100] +" hundred " + ("and " if addAnd and num>100 else "") + numberToText(num- ((num//100)* 100))
+    elif len(str(num))<=5:
+        text = numberToText(num//1000) +" thousand " + numberToText(num- ((num//1000)* 1000))
+    elif len(str(num))<=7:
+        text = numberToText(num//100000) +" lakh " + numberToText(num- ((num//100000)* 100000))
     else:
-        text = numberToText(no//10000000) +" crores " + numberToText(no- ((no//10000000)* 10000000))
+        text = numberToText(num//10000000) +" crores " + numberToText(num- ((num//10000000)* 10000000))
     return text
+
+
+def cleanInput(num):
+    floatParser = ignore_exception(ValueError, 0.00)(float)
+    intParser = ignore_exception(ValueError, 0)(int)
+    num = floatParser(num)  
+    strNo = "%.2f" %num
+    splitDecimals = strNo.split(".")
+    return intParser(splitDecimals[0]), intParser(splitDecimals[1])
+
+def convertNumToWord(num):  
     
-def convertNumToWord(no):    
-    strNo = "%.2f" %no
-    n = strNo.split(".")
-    rs = numberToText(int(n[0])).strip()
-    ps =""
-    if(len(n)>=2):
-        ps = numberToText(int(n[1])).strip()
-        rs = "" + ps+ " paise"  if(rs.strip()=="") else  (rs + " and " + ps+ " paise").strip()
-    return rs
+    wholeNumber, fractionPart = cleanInput(num)
+    convertedWholeNum = numberToText(wholeNumber).strip()
+    fractionpartArr = list(str(fractionPart))
+    tempFractionPart = ""
+    for i in fractionpartArr:
+        tempFractionPart += " " + numberToText(int(i)).strip() 
+    convertedFractionPart = "point" + tempFractionPart if len(tempFractionPart.strip())>0 else ""
+    return (convertedWholeNum + " " + convertedFractionPart).strip().capitalize()
+
+
+# print(convertNumToWord(126.44))
+# print(convertNumToWord(12100))
+# print(convertNumToWord(0.40))
+# print(convertNumToWord(120002123.50))
+# print(convertNumToWord(""))
+# print(convertNumToWord(120))
+# print(convertNumToWord(100))
+# print(convertNumToWord(1345))
